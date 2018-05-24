@@ -32,17 +32,17 @@ func main() {
 		checkArgumentsOrQuit(args, 3)
 		copy(args[1], args[2])
 	default:
-		fmt.Printf("I don't what %v means\n", action)
+		fmt.Printf("I don't know what %v means\n", action)
 		printUsage()
 		os.Exit(-3)
 	}
 }
 
 func remove(source string) {
-	fmt.Printf("removing %v\n", source)
+	fmt.Println("Removing", source)
 	_, err := os.Stat(source)
 	if os.IsNotExist(err) {
-		fmt.Printf("source [%v] does not exist, doing nothing\n", source)
+		fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
 		return
 	}
 	err = os.RemoveAll(source)
@@ -54,7 +54,7 @@ func remove(source string) {
 func copy(source, destination string) {
 	sourceFile, err := os.Stat(source)
 	if os.IsNotExist(err) {
-		fmt.Printf("source [%v] does not exist\n", source)
+		fmt.Printf("Source [%v] does not exist\n", source)
 		os.Exit(-2)
 	}
 	if sourceFile.Mode().IsDir() {
@@ -89,7 +89,7 @@ func copyFile(src, dst string) error {
 	var destinationFD *os.File
 	var sourceFileInfo os.FileInfo
 
-	fmt.Printf("Copy file [%v] to [%v]\n", src, dst)
+	fmt.Printf("Copying file [%v] to [%v]\n", src, dst)
 	if sourceFD, err = os.Open(src); err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func copyDirectory(src string, dst string) error {
 	var fds []os.FileInfo
 	var srcinfo os.FileInfo
 
-	fmt.Printf("Copy dir [%v] to [%v]\n", src, dst)
+	fmt.Printf("Copying dir [%v] to [%v]\n", src, dst)
 	if srcinfo, err = os.Stat(src); err != nil {
 		return err
 	}
@@ -145,15 +145,15 @@ func copyDirectory(src string, dst string) error {
 
 func checkArgumentsOrQuit(args []string, max int) {
 	if len(args) < max {
-		fmt.Println("not enough argument, I'm the stupid one, you fix it.")
+		fmt.Println("Not enough arguments, I'm the stupid one, you fix it")
 		printUsage()
 		os.Exit(-1)
 	}
 }
 
 func printUsage() {
-	fmt.Println("I'm stupidly copying or removing files.")
+	fmt.Println("I'm stupidly copying or removing files and directories")
 	fmt.Println("* stupid home")
-	fmt.Println("* stupid cp src dst")
-	fmt.Println("* stupid rm src")
+	fmt.Println("* stupid cp SRC DST")
+	fmt.Println("* stupid rm SRC")
 }
