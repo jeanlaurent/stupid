@@ -1,3 +1,9 @@
+depends:
+	dep ensure
+
+test:
+	go test -v .
+
 release:
 	rm -rf build
 	mkdir build
