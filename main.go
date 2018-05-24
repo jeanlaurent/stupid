@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func remove(source string) {
 	_, err := os.Stat(source)
 	if os.IsNotExist(err) {
 		fmt.Printf("source [%v] does not exist, doing nothing\n", source)
-		os.Exit(0)
+		return
 	}
 	err = os.RemoveAll(source)
 	if err != nil {
@@ -54,7 +55,18 @@ func copy(source, destination string) {
 			os.Exit(-3)
 		}
 	} else {
-		err := copyFile(source, destination)
+		destinationPath := filepath.Dir(destination)
+		_, err := os.Stat(destinationPath)
+		if os.IsNotExist(err) {
+			sourcePath := filepath.Dir(source)
+			sourceDir, err := os.Stat(sourcePath)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(-3)
+			}
+			os.MkdirAll(destinationPath, sourceDir.Mode())
+		}
+		err = copyFile(source, destination)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-3)
