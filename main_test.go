@@ -32,6 +32,24 @@ func TestRemove(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
+func TestRemoveWithGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("empty-dir"),
+		fs.WithDir("full-dir",
+			fs.WithFile("some-file", "")),
+		fs.WithFile("remaining-file", ""))
+	defer rootDirectory.Remove()
+
+	err := remove([]string{
+		filepath.Join(rootDirectory.Path(), "*-dir"),
+		filepath.Join(rootDirectory.Path(), "full-dir"),
+	})
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t, fs.WithFile("remaining-file", ""))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
 func TestCopyFile(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithFile("foo.txt", "foo\n"))

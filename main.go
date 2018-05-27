@@ -62,6 +62,10 @@ func printUsage() {
 }
 
 func remove(sources []string) error {
+	sources, err := glob(sources)
+	if err != nil {
+		return err
+	}
 	for _, source := range sources {
 		fmt.Println("Removing", source)
 		_, err := os.Stat(source)
@@ -77,6 +81,18 @@ func remove(sources []string) error {
 		}
 	}
 	return nil
+}
+
+func glob(sources []string) ([]string, error) {
+	var paths []string
+	for _, source := range sources {
+		matches, err := filepath.Glob(source)
+		if err != nil {
+			return nil, err
+		}
+		paths = append(paths, matches...)
+	}
+	return paths, nil
 }
 
 func copy(source, destination string) error {
