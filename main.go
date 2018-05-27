@@ -34,7 +34,7 @@ func main() {
 		err = remove(args[1:])
 	case "cp":
 		checkArguments(args, 3)
-		err = copy(args[1], args[2])
+		err = copy(args[1:len(args)-1], args[len(args)-1])
 	default:
 		fmt.Printf("I don't know what %v means\n", action)
 		printUsage()
@@ -57,7 +57,7 @@ func checkArguments(args []string, max int) {
 func printUsage() {
 	fmt.Println("I'm stupidly copying or removing files and directories")
 	fmt.Println("* stupid home")
-	fmt.Println("* stupid cp SRC DST")
+	fmt.Println("* stupid cp SRCS DST")
 	fmt.Println("* stupid rm SRCS")
 }
 
@@ -95,26 +95,54 @@ func glob(sources []string) ([]string, error) {
 	return paths, nil
 }
 
-func copy(source, destination string) error {
-	sourceInfo, err := os.Stat(source)
+func copy(sources []string, destination string) error {
+	sources, err := glob(sources)
+	if err != nil {
+		return err
+	}
+	toFile := true
+	info, err := os.Stat(destination)
 	if os.IsNotExist(err) {
-		return fmt.Errorf("Source [%v] does not exist", source)
-	}
-	if err != nil {
+		if destination[len(destination)-1] == '/' || len(sources) > 1 {
+			toFile = false
+		}
+	} else if err != nil {
 		return err
+	} else if info.IsDir() {
+		toFile = false
+	} else if len(sources) > 1 {
+		return fmt.Errorf("Only one source file allowed when destination is a file")
 	}
-	if sourceInfo.Mode().IsDir() {
-		return copyDirectory(source, destination)
+	for _, source := range sources {
+		info, err = os.Stat(source)
+		if os.IsNotExist(err) {
+			return fmt.Errorf("Source [%v] does not exist", source)
+		}
+		if err != nil {
+			return err
+		}
+		dest := filepath.Join(destination, filepath.Base(source))
+		if info.IsDir() {
+			if err = copyDirectory(source, dest); err != nil {
+				return err
+			}
+			continue
+		}
+		if toFile {
+			dest = destination
+		}
+		sourceDirInfo, err := os.Stat(filepath.Dir(source))
+		if err != nil {
+			return err
+		}
+		if err = os.MkdirAll(filepath.Dir(dest), sourceDirInfo.Mode()); err != nil {
+			return err
+		}
+		if err = copyFile(source, dest); err != nil {
+			return err
+		}
 	}
-	sourceDirInfo, err := os.Stat(filepath.Dir(source))
-	if err != nil {
-		return err
-	}
-	err = os.MkdirAll(filepath.Dir(destination), sourceDirInfo.Mode())
-	if err != nil {
-		return err
-	}
-	return copyFile(source, destination)
+	return nil
 }
 
 func copyFile(src, dst string) error {
