@@ -195,28 +195,32 @@ func copyDirectory(src string, dst string, mode os.FileMode) error {
 }
 
 func tarFiles(dst string, srcs ...string) error {
-	fmt.Printf("Taring [%v]\n", dst)
-	if err := os.MkdirAll(filepath.Dir(dst), os.ModeDir); err != nil {
-		return err
-	}
-	f, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 	var w io.Writer
-	w = f
-	ext := filepath.Ext(dst)
-	if ext == ".gz" || ext == ".tgz" {
-		gz := gzip.NewWriter(w)
-		defer gz.Close()
-		w = gz
+	if dst == "-" {
+		w = os.Stdout
+	} else {
+		fmt.Printf("Taring [%v]\n", dst)
+		if err := os.MkdirAll(filepath.Dir(dst), os.ModeDir); err != nil {
+			return err
+		}
+		f, err := os.Create(dst)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		w = f
+		ext := filepath.Ext(dst)
+		if ext == ".gz" || ext == ".tgz" {
+			gz := gzip.NewWriter(w)
+			defer gz.Close()
+			w = gz
+		}
 	}
 	tw := tar.NewWriter(w)
 	defer tw.Close()
 	for _, src := range srcs {
 		dir := filepath.Dir(src)
-		err = filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -252,24 +256,28 @@ func tarFiles(dst string, srcs ...string) error {
 
 func untar(src, dst string) error {
 	fmt.Printf("Untaring [%v] to [%v]\n", src, dst)
-	f, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if err := os.MkdirAll(dst, os.ModeDir); err != nil {
-		return err
-	}
 	var r io.Reader
-	r = f
-	ext := filepath.Ext(src)
-	if ext == ".gz" || ext == ".tgz" {
-		gz, err := gzip.NewReader(r)
+	if src == "-" {
+		r = os.Stdin
+	} else {
+		f, err := os.Open(src)
 		if err != nil {
 			return err
 		}
-		defer gz.Close()
-		r = gz
+		defer f.Close()
+		if err := os.MkdirAll(dst, os.ModeDir); err != nil {
+			return err
+		}
+		r = f
+		ext := filepath.Ext(src)
+		if ext == ".gz" || ext == ".tgz" {
+			gz, err := gzip.NewReader(r)
+			if err != nil {
+				return err
+			}
+			defer gz.Close()
+			r = gz
+		}
 	}
 	tr := tar.NewReader(r)
 	for {
