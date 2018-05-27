@@ -11,6 +11,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		printUsage()
+		return
+	}
 	args := os.Args[1:]
 	action := args[0]
 	var err error
