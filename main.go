@@ -31,7 +31,7 @@ func main() {
 		fmt.Print(home)
 	case "rm":
 		checkArguments(args, 2)
-		err = remove(args[1])
+		err = remove(args[1:])
 	case "cp":
 		checkArguments(args, 3)
 		err = copy(args[1], args[2])
@@ -58,17 +58,25 @@ func printUsage() {
 	fmt.Println("I'm stupidly copying or removing files and directories")
 	fmt.Println("* stupid home")
 	fmt.Println("* stupid cp SRC DST")
-	fmt.Println("* stupid rm SRC")
+	fmt.Println("* stupid rm SRCS")
 }
 
-func remove(source string) error {
-	fmt.Println("Removing", source)
-	_, err := os.Stat(source)
-	if os.IsNotExist(err) {
-		fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
-		return nil
+func remove(sources []string) error {
+	for _, source := range sources {
+		fmt.Println("Removing", source)
+		_, err := os.Stat(source)
+		if os.IsNotExist(err) {
+			fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if err = os.RemoveAll(source); err != nil {
+			return err
+		}
 	}
-	return os.RemoveAll(source)
+	return nil
 }
 
 func copy(source, destination string) error {

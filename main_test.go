@@ -8,42 +8,27 @@ import (
 	"gotest.tools/fs"
 )
 
-func TestRemoveEmptyDirectory(t *testing.T) {
+func TestRemove(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("toBeDeleted"),
-		fs.WithDir("remaining"))
+		fs.WithDir("empty-dir"),
+		fs.WithDir("full-dir",
+			fs.WithFile("some-file", "")),
+		fs.WithFile("file", ""),
+		fs.WithFile("remaining-file", ""),
+		fs.WithDir("remaining-dir"))
 	defer rootDirectory.Remove()
 
-	err := remove(filepath.Join(rootDirectory.Path(), "toBeDeleted"))
+	err := remove([]string{
+		filepath.Join(rootDirectory.Path(), "empty-dir"),
+		filepath.Join(rootDirectory.Path(), "full-dir"),
+		filepath.Join(rootDirectory.Path(), "non-existing"),
+		filepath.Join(rootDirectory.Path(), "file"),
+	})
 	assert.NilError(t, err)
 
-	expected := fs.Expected(t, fs.WithDir("remaining"))
-	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
-}
-
-func TestRemoveFullDirectory(t *testing.T) {
-	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("toBeDeleted",
-			fs.WithFile("foo", "foobar")),
-		fs.WithDir("remaining"))
-	defer rootDirectory.Remove()
-
-	err := remove(filepath.Join(rootDirectory.Path(), "toBeDeleted"))
-	assert.NilError(t, err)
-
-	expected := fs.Expected(t, fs.WithDir("remaining"))
-	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
-}
-
-func TestRemoveNonExistingDirectory(t *testing.T) {
-	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("remaining"))
-	defer rootDirectory.Remove()
-
-	err := remove(filepath.Join(rootDirectory.Path(), "nonExisting"))
-	assert.NilError(t, err)
-
-	expected := fs.Expected(t, fs.WithDir("remaining"))
+	expected := fs.Expected(t,
+		fs.WithFile("remaining-file", ""),
+		fs.WithDir("remaining-dir"))
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
