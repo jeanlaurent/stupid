@@ -4,7 +4,7 @@ depends:
 test:
 	go test -v .
 
-release: test
+build: test
 	rm -rf build
 	mkdir build
 	GOOS=darwin GOARCH=amd64 go build -o build/stupid
