@@ -24,11 +24,9 @@ func main() {
 		printUsage()
 	case "home":
 		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(-3)
+		if err == nil {
+			fmt.Print(home)
 		}
-		fmt.Print(home)
 	case "rm":
 		checkArguments(args, 2)
 		err = remove(args[1:])
