@@ -123,6 +123,7 @@ func copy(sources []string, destination string) error {
 		}
 		dest := filepath.Join(destination, filepath.Base(source))
 		if info.IsDir() {
+			fmt.Printf("Copying dir [%v] to [%v]\n", source, dest)
 			if err = copyDirectory(source, dest); err != nil {
 				return err
 			}
@@ -138,6 +139,7 @@ func copy(sources []string, destination string) error {
 		if err = os.MkdirAll(filepath.Dir(dest), sourceDirInfo.Mode()); err != nil {
 			return err
 		}
+		fmt.Printf("Copying file [%v] to [%v]\n", source, dest)
 		if err = copyFile(source, dest); err != nil {
 			return err
 		}
@@ -146,7 +148,6 @@ func copy(sources []string, destination string) error {
 }
 
 func copyFile(src, dst string) error {
-	fmt.Printf("Copying file [%v] to [%v]\n", src, dst)
 	source, err := os.Open(src)
 	if err != nil {
 		return err
@@ -168,7 +169,6 @@ func copyFile(src, dst string) error {
 }
 
 func copyDirectory(src string, dst string) error {
-	fmt.Printf("Copying dir [%v] to [%v]\n", src, dst)
 	info, err := os.Stat(src)
 	if err != nil {
 		return err
