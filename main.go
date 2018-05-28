@@ -124,7 +124,7 @@ func copy(sources []string, destination string) error {
 		dest := filepath.Join(destination, filepath.Base(source))
 		if info.IsDir() {
 			fmt.Printf("Copying dir [%v] to [%v]\n", source, dest)
-			if err = copyDirectory(source, dest); err != nil {
+			if err = copyDirectory(source, dest, info.Mode()); err != nil {
 				return err
 			}
 			continue
@@ -132,22 +132,22 @@ func copy(sources []string, destination string) error {
 		if toFile {
 			dest = destination
 		}
-		sourceDirInfo, err := os.Stat(filepath.Dir(source))
+		dirInfo, err := os.Stat(filepath.Dir(source))
 		if err != nil {
 			return err
 		}
-		if err = os.MkdirAll(filepath.Dir(dest), sourceDirInfo.Mode()); err != nil {
+		if err = os.MkdirAll(filepath.Dir(dest), dirInfo.Mode()); err != nil {
 			return err
 		}
 		fmt.Printf("Copying file [%v] to [%v]\n", source, dest)
-		if err = copyFile(source, dest); err != nil {
+		if err = copyFile(source, dest, info.Mode()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func copyFile(src, dst string) error {
+func copyFile(src, dst string, mode os.FileMode) error {
 	source, err := os.Open(src)
 	if err != nil {
 		return err
@@ -161,19 +161,11 @@ func copyFile(src, dst string) error {
 	if _, err = io.Copy(destination, source); err != nil {
 		return err
 	}
-	info, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(dst, info.Mode())
+	return os.Chmod(dst, mode)
 }
 
-func copyDirectory(src string, dst string) error {
-	info, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if err = os.MkdirAll(dst, info.Mode()); err != nil {
+func copyDirectory(src string, dst string, mode os.FileMode) error {
+	if err := os.MkdirAll(dst, mode); err != nil {
 		return err
 	}
 	infos, err := ioutil.ReadDir(src)
@@ -184,10 +176,10 @@ func copyDirectory(src string, dst string) error {
 		srcfp := filepath.Join(src, info.Name())
 		dstfp := filepath.Join(dst, info.Name())
 		if info.IsDir() {
-			if err = copyDirectory(srcfp, dstfp); err != nil {
+			if err = copyDirectory(srcfp, dstfp, info.Mode()); err != nil {
 				return err
 			}
-		} else if err = copyFile(srcfp, dstfp); err != nil {
+		} else if err = copyFile(srcfp, dstfp, info.Mode()); err != nil {
 			return err
 		}
 	}
