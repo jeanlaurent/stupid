@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 func main() {
@@ -16,6 +18,13 @@ func main() {
 	switch action {
 	case "help":
 		printUsage()
+	case "home":
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(-3)
+		}
+		fmt.Print(home)
 	case "rm":
 		checkArgumentsOrQuit(args, 2)
 		remove(args[1])
@@ -144,6 +153,7 @@ func checkArgumentsOrQuit(args []string, max int) {
 
 func printUsage() {
 	fmt.Println("I'm stupidly copying or removing files.")
+	fmt.Println("* stupid home")
 	fmt.Println("* stupid cp src dst")
 	fmt.Println("* stupid rm src")
 }
