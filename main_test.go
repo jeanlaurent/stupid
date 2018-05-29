@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -8,98 +9,192 @@ import (
 	"gotest.tools/fs"
 )
 
-func TestRemoveEmptyDirectory(t *testing.T) {
+func TestRemove(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("toBeDeleted"),
-		fs.WithDir("remaining"))
+		fs.WithDir("empty-dir"),
+		fs.WithDir("full-dir",
+			fs.WithFile("some-file", "")),
+		fs.WithFile("file", ""),
+		fs.WithFile("remaining-file", ""),
+		fs.WithDir("remaining-dir"))
 	defer rootDirectory.Remove()
 
-	err := remove(filepath.Join(rootDirectory.Path(), "toBeDeleted"))
-	assert.NilError(t, err)
-
-	expected := fs.Expected(t, fs.WithDir("remaining"))
-	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
-}
-
-func TestRemoveFullDirectory(t *testing.T) {
-	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("toBeDeleted",
-			fs.WithFile("foo", "foobar")),
-		fs.WithDir("remaining"))
-	defer rootDirectory.Remove()
-
-	err := remove(filepath.Join(rootDirectory.Path(), "toBeDeleted"))
-	assert.NilError(t, err)
-
-	expected := fs.Expected(t, fs.WithDir("remaining"))
-	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
-}
-
-func TestRemoveNonExistingDirectory(t *testing.T) {
-	rootDirectory := fs.NewDir(t, "root",
-		fs.WithDir("remaining"))
-	defer rootDirectory.Remove()
-
-	err := remove(filepath.Join(rootDirectory.Path(), "nonExisting"))
-	assert.NilError(t, err)
-
-	expected := fs.Expected(t, fs.WithDir("remaining"))
-	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
-}
-
-func TestCopyFile(t *testing.T) {
-	rootDirectory := fs.NewDir(t, "root",
-		fs.WithFile("foo.txt", "foo\n"))
-	defer rootDirectory.Remove()
-
-	err := copy(filepath.Join(rootDirectory.Path(), "foo.txt"), filepath.Join(rootDirectory.Path(), "bar.txt"))
+	err := remove([]string{
+		filepath.Join(rootDirectory.Path(), "empty-dir"),
+		filepath.Join(rootDirectory.Path(), "full-dir"),
+		filepath.Join(rootDirectory.Path(), "non-existing"),
+		filepath.Join(rootDirectory.Path(), "file"),
+	})
 	assert.NilError(t, err)
 
 	expected := fs.Expected(t,
-		fs.WithFile("foo.txt", "foo\n"),
-		fs.WithFile("bar.txt", "foo\n"))
+		fs.WithFile("remaining-file", ""),
+		fs.WithDir("remaining-dir"))
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
-func TestCopyFileInNonExistingPath(t *testing.T) {
+func TestRemoveWithGlob(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
-		fs.WithFile("foo.txt", "foo\n"))
+		fs.WithDir("empty-dir"),
+		fs.WithDir("full-dir",
+			fs.WithFile("some-file", "")),
+		fs.WithFile("remaining-file", ""))
 	defer rootDirectory.Remove()
 
-	err := copy(filepath.Join(rootDirectory.Path(), "foo.txt"), filepath.Join(rootDirectory.Path(), "bar", "bar.txt"))
+	err := remove([]string{
+		filepath.Join(rootDirectory.Path(), "*-dir"),
+		filepath.Join(rootDirectory.Path(), "full-dir"),
+	})
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t, fs.WithFile("remaining-file", ""))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyFileToNonExistingFile(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "bar.txt"))
 	assert.NilError(t, err)
 
 	expected := fs.Expected(t,
-		fs.WithFile("foo.txt", "foo\n"),
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "foo"))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyFileToExistingFile(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "bar"))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "bar.txt"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "foo"))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyFileToNonExistingDir(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "destination")+"/")
+	assert.NilError(t, err)
+
+	info, err := os.Stat(rootDirectory.Path())
+	assert.NilError(t, err)
+	expected := fs.Expected(t,
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithDir("destination",
+			fs.WithMode(info.Mode()),
+			fs.WithFile("foo.txt", "foo")))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyFileToExistingDir(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithDir("destination"))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithDir("destination",
+			fs.WithFile("foo.txt", "foo")))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyMultipleFilesToFileFails(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "bar"))
+	defer rootDirectory.Remove()
+
+	err := copy(
+		[]string{
+			filepath.Join(rootDirectory.Path(), "foo.txt"),
+			filepath.Join(rootDirectory.Path(), "foo.txt"),
+		}, filepath.Join(rootDirectory.Path(), "bar.txt"))
+	assert.Error(t, err, "Only one source file allowed when destination is a file")
+}
+
+func TestCopyFileToNonExistingPath(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "bar", "bar.txt"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithFile("foo.txt", "foo"),
 		fs.WithDir("bar", fs.WithMode(0700),
-			fs.WithFile("bar.txt", "foo\n")),
+			fs.WithFile("bar.txt", "foo")),
 	)
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
-func TestCopyTree(t *testing.T) {
+func TestCopyTreeToNonExistingPath(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithDir("source",
-			fs.WithFile("foo.txt", "foo\n"),
+			fs.WithFile("foo.txt", "foo"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar\n")),
+				fs.WithFile("bar.txt", "bar")),
 		),
 	)
 	defer rootDirectory.Remove()
 
-	err := copy(filepath.Join(rootDirectory.Path(), "source"), filepath.Join(rootDirectory.Path(), "destination"))
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "bar")}, filepath.Join(rootDirectory.Path(), "destination"))
 	assert.NilError(t, err)
 
 	expected := fs.Expected(t,
 		fs.WithDir("source",
-			fs.WithFile("foo.txt", "foo\n"),
+			fs.WithFile("foo.txt", "foo"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar\n")),
+				fs.WithFile("bar.txt", "bar")),
 		),
 		fs.WithDir("destination",
-			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar\n")),
+				fs.WithFile("bar.txt", "bar")),
+		),
+	)
+
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyTreeWithGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar")),
+		),
+	)
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "*")}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar")),
+		),
+		fs.WithDir("destination",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar")),
 		),
 	)
 
