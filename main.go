@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,6 +35,12 @@ func main() {
 	case "cp":
 		checkArguments(args, 3)
 		err = copy(args[1:len(args)-1], args[len(args)-1])
+	case "tar":
+		checkArguments(args, 2)
+		err = tarFiles(args[len(args)-1], args[1:len(args)-1]...)
+	case "untar":
+		checkArguments(args, 2)
+		err = untar(args[1], args[2])
 	default:
 		fmt.Printf("I don't know what %v means\n", action)
 		printUsage()
@@ -53,10 +61,12 @@ func checkArguments(args []string, max int) {
 }
 
 func printUsage() {
-	fmt.Println("I'm stupidly copying or removing files and directories")
+	fmt.Println("I'm stupidly manipulating files and directories")
 	fmt.Println("* stupid home")
 	fmt.Println("* stupid cp SRCS DST")
 	fmt.Println("* stupid rm SRCS")
+	fmt.Println("* stupid tar SRCS DST")
+	fmt.Println("* stupid untar SRC DST")
 }
 
 func remove(sources []string) error {
@@ -178,6 +188,121 @@ func copyDirectory(src string, dst string, mode os.FileMode) error {
 				return err
 			}
 		} else if err = copyFile(srcfp, dstfp, info.Mode()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func tarFiles(dst string, srcs ...string) error {
+	var w io.Writer
+	if dst == "-" {
+		w = os.Stdout
+	} else {
+		fmt.Printf("Taring [%v]\n", dst)
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+			return err
+		}
+		f, err := os.Create(dst)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		w = f
+		ext := filepath.Ext(dst)
+		if ext == ".gz" || ext == ".tgz" {
+			gz := gzip.NewWriter(w)
+			defer gz.Close()
+			w = gz
+		}
+	}
+	tw := tar.NewWriter(w)
+	defer tw.Close()
+	for _, src := range srcs {
+		dir := filepath.Dir(src)
+		err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(dir, path)
+			if err != nil {
+				return err
+			}
+			hdr, err := tar.FileInfoHeader(info, info.Name())
+			if err != nil {
+				return err
+			}
+			hdr.Name = rel
+			if err := tw.WriteHeader(hdr); err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = io.Copy(tw, f)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func untar(src, dst string) error {
+	fmt.Printf("Untaring [%v] to [%v]\n", src, dst)
+	var r io.Reader
+	if src == "-" {
+		r = os.Stdin
+	} else {
+		f, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if err := os.MkdirAll(dst, 0755); err != nil {
+			return err
+		}
+		r = f
+		ext := filepath.Ext(src)
+		if ext == ".gz" || ext == ".tgz" {
+			gz, err := gzip.NewReader(r)
+			if err != nil {
+				return err
+			}
+			defer gz.Close()
+			r = gz
+		}
+	}
+	tr := tar.NewReader(r)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return err
+		}
+		path := filepath.Join(dst, hdr.Name)
+		info := hdr.FileInfo()
+		if info.IsDir() {
+			if err = os.MkdirAll(path, info.Mode()); err != nil {
+				return err
+			}
+			continue
+		}
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(f, tr)
+		if err != nil {
 			return err
 		}
 	}
