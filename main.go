@@ -200,7 +200,7 @@ func tarFiles(dst string, srcs ...string) error {
 		w = os.Stdout
 	} else {
 		fmt.Printf("Taring [%v]\n", dst)
-		if err := os.MkdirAll(filepath.Dir(dst), os.ModeDir); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 			return err
 		}
 		f, err := os.Create(dst)
@@ -265,7 +265,7 @@ func untar(src, dst string) error {
 			return err
 		}
 		defer f.Close()
-		if err := os.MkdirAll(dst, os.ModeDir); err != nil {
+		if err := os.MkdirAll(dst, 0755); err != nil {
 			return err
 		}
 		r = f

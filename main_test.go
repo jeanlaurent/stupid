@@ -173,7 +173,7 @@ func TestTarTree(t *testing.T) {
 				fs.WithFile("bar.txt", "bar\n"))))
 	defer rootDirectory.Remove()
 
-	dst := filepath.Join(rootDirectory.Path(), "dst.tar")
+	dst := filepath.Join(rootDirectory.Path(), "destination", "dst.tar")
 	err := tarFiles(dst, filepath.Join(rootDirectory.Path(), "source", "foo.txt"), filepath.Join(rootDirectory.Path(), "source", "bar"))
 	assert.NilError(t, err)
 	err = untar(dst, filepath.Join(rootDirectory.Path(), "destination"))
@@ -184,8 +184,8 @@ func TestTarTree(t *testing.T) {
 			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
 				fs.WithFile("bar.txt", "bar\n"))),
-		fs.WithFile("dst.tar", "", fs.MatchAnyFileContent),
 		fs.WithDir("destination",
+			fs.WithFile("dst.tar", "", fs.MatchAnyFileContent),
 			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
 				fs.WithFile("bar.txt", "bar\n"))))
@@ -229,7 +229,7 @@ func TestGzipTarTree(t *testing.T) {
 				fs.WithFile("bar.txt", "bar\n"))))
 	defer rootDirectory.Remove()
 
-	dst := filepath.Join(rootDirectory.Path(), "dst.tar.gz")
+	dst := filepath.Join(rootDirectory.Path(), "destination", "dst.tar.gz")
 	err := tarFiles(dst, filepath.Join(rootDirectory.Path(), "source", "foo.txt"), filepath.Join(rootDirectory.Path(), "source", "bar"))
 	assert.NilError(t, err)
 	err = untar(dst, filepath.Join(rootDirectory.Path(), "destination"))
@@ -240,8 +240,8 @@ func TestGzipTarTree(t *testing.T) {
 			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
 				fs.WithFile("bar.txt", "bar\n"))),
-		fs.WithFile("dst.tar.gz", "", fs.MatchAnyFileContent),
 		fs.WithDir("destination",
+			fs.WithFile("dst.tar.gz", "", fs.MatchAnyFileContent),
 			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
 				fs.WithFile("bar.txt", "bar\n"))))
