@@ -1,4 +1,4 @@
-https://circleci.com/gh/jeanlaurent/stupid/tree/master
+[![CircleCI](https://circleci.com/gh/jeanlaurent/stupid/tree/master.svg?style=svg)](https://circleci.com/gh/jeanlaurent/stupid/tree/master)
 
 # Stupid
 
