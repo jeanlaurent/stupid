@@ -156,6 +156,9 @@ func copy(sources []string, destination string) error {
 }
 
 func copyFile(src, dst string, mode os.FileMode) error {
+	if same, err := sameFile(src, dst); err != nil || same {
+		return err
+	}
 	source, err := os.Open(src)
 	if err != nil {
 		return err
@@ -170,6 +173,18 @@ func copyFile(src, dst string, mode os.FileMode) error {
 		return err
 	}
 	return os.Chmod(dst, mode)
+}
+
+func sameFile(src, dst string) (bool, error) {
+	absSrc, err := filepath.Abs(src)
+	if err != nil {
+		return false, err
+	}
+	absDst, err := filepath.Abs(dst)
+	if err != nil {
+		return false, err
+	}
+	return absSrc == absDst, nil
 }
 
 func copyDirectory(src string, dst string, mode os.FileMode) error {

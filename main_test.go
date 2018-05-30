@@ -143,6 +143,19 @@ func TestCopyFileToNonExistingPath(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
+func TestCopyFileOverItself(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"))
+	defer rootDirectory.Remove()
+
+	f := filepath.Join(rootDirectory.Path(), "foo.txt")
+	err := copy([]string{f}, f)
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t, fs.WithFile("foo.txt", "foo"))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
 func TestCopyTreeToNonExistingPath(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithDir("source",
