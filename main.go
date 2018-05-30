@@ -36,10 +36,10 @@ func main() {
 		checkArguments(args, 3)
 		err = copy(args[1:len(args)-1], args[len(args)-1])
 	case "tar":
-		checkArguments(args, 2)
+		checkArguments(args, 3)
 		err = tarFiles(args[len(args)-1], args[1:len(args)-1]...)
 	case "untar":
-		checkArguments(args, 2)
+		checkArguments(args, 3)
 		err = untar(args[1], args[2])
 	default:
 		fmt.Printf("I don't know what %v means\n", action)
@@ -195,6 +195,10 @@ func copyDirectory(src string, dst string, mode os.FileMode) error {
 }
 
 func tarFiles(dst string, srcs ...string) error {
+	srcs, err := glob(srcs)
+	if err != nil {
+		return err
+	}
 	var w io.Writer
 	if dst == "-" {
 		w = os.Stdout
