@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -74,8 +75,11 @@ func remove(sources []string) error {
 	if err != nil {
 		return err
 	}
+	if len(sources) == 0 {
+		fmt.Println("No source files, doing nothing")
+		return nil
+	}
 	for _, source := range sources {
-		fmt.Println("Removing", source)
 		_, err := os.Stat(source)
 		if os.IsNotExist(err) {
 			fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
@@ -84,6 +88,7 @@ func remove(sources []string) error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Removing [%v]\n", source)
 		if err = os.RemoveAll(source); err != nil {
 			return err
 		}
@@ -98,7 +103,11 @@ func glob(sources []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		paths = append(paths, matches...)
+		if matches != nil {
+			paths = append(paths, matches...)
+		} else if !strings.ContainsAny(source, "*?") {
+			paths = append(paths, source)
+		}
 	}
 	return paths, nil
 }
@@ -107,6 +116,9 @@ func copy(sources []string, destination string) error {
 	sources, err := glob(sources)
 	if err != nil {
 		return err
+	}
+	if len(sources) == 0 {
+		return fmt.Errorf("No source files")
 	}
 	toFile := true
 	info, err := os.Stat(destination)
@@ -213,6 +225,9 @@ func tarFiles(dst string, srcs ...string) error {
 	srcs, err := glob(srcs)
 	if err != nil {
 		return err
+	}
+	if len(srcs) == 0 {
+		return fmt.Errorf("No source files")
 	}
 	var w io.Writer
 	if dst == "-" {
