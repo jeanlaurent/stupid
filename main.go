@@ -43,19 +43,19 @@ func main() {
 		checkArguments(args, 3)
 		err = untar(args[1], args[2])
 	default:
-		fmt.Printf("I don't know what %v means\n", action)
+		fmt.Fprintln(os.Stderr, "I don't know what", action, "means")
 		printUsage()
 		os.Exit(-3)
 	}
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)
 	}
 }
 
 func checkArguments(args []string, max int) {
 	if len(args) < max {
-		fmt.Println("Not enough arguments, I'm the stupid one, you fix it")
+		fmt.Fprintln(os.Stderr, "Not enough arguments, I'm the stupid one, you fix it")
 		printUsage()
 		os.Exit(-1)
 	}
