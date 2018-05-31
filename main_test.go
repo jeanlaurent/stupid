@@ -114,7 +114,7 @@ func TestCopyFileToExistingDir(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
-func TestCopyMultipleFilesToFileFails(t *testing.T) {
+func TestCopyMultipleFilesToFile(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithFile("foo.txt", "foo"),
 		fs.WithFile("bar.txt", "bar"))
@@ -128,7 +128,16 @@ func TestCopyMultipleFilesToFileFails(t *testing.T) {
 	assert.Error(t, err, "Only one source file allowed when destination is a file")
 }
 
-func TestCopyFileToNonExistingPath(t *testing.T) {
+func TestCopyNonExistingFile(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root")
+	defer rootDirectory.Remove()
+
+	err := copy(
+		[]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "bar.txt"))
+	assert.ErrorContains(t, err, "does not exist")
+}
+
+func TestCopyFileToNonExistingPathFile(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithFile("foo.txt", "foo"))
 	defer rootDirectory.Remove()
@@ -140,6 +149,19 @@ func TestCopyFileToNonExistingPath(t *testing.T) {
 		fs.WithFile("foo.txt", "foo"),
 		fs.WithDir("bar", fs.WithMode(0700),
 			fs.WithFile("bar.txt", "foo")))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyFileOverItself(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"))
+	defer rootDirectory.Remove()
+
+	f := filepath.Join(rootDirectory.Path(), "foo.txt")
+	err := copy([]string{f}, f)
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t, fs.WithFile("foo.txt", "foo"))
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
@@ -162,6 +184,45 @@ func TestCopyTreeToNonExistingPath(t *testing.T) {
 		fs.WithDir("destination",
 			fs.WithDir("bar",
 				fs.WithFile("bar.txt", "bar"))))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyTreeWithGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar"))))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "*")}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar")),
+		),
+		fs.WithDir("destination",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar"))))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestCopyTreeWithEmptyGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo")))
+	defer rootDirectory.Remove()
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "non-existing*")}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.Error(t, err, "No source files")
+
+	expected := fs.Expected(t,
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo")))
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
@@ -192,33 +253,44 @@ func TestTarTree(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
-func TestCopyTreeWithGlob(t *testing.T) {
+func TestTarTreeWithGlob(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithDir("source",
-			fs.WithFile("foo.txt", "foo"),
+			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar")),
-		),
-	)
+				fs.WithFile("bar.txt", "bar\n"))))
 	defer rootDirectory.Remove()
 
-	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "*")}, filepath.Join(rootDirectory.Path(), "destination"))
+	dst := filepath.Join(rootDirectory.Path(), "destination", "dst.tar")
+	err := tarFiles(dst, filepath.Join(rootDirectory.Path(), "source", "*"))
+	assert.NilError(t, err)
+	err = untar(dst, filepath.Join(rootDirectory.Path(), "destination"))
 	assert.NilError(t, err)
 
 	expected := fs.Expected(t,
 		fs.WithDir("source",
-			fs.WithFile("foo.txt", "foo"),
+			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar")),
-		),
+				fs.WithFile("bar.txt", "bar\n"))),
 		fs.WithDir("destination",
-			fs.WithFile("foo.txt", "foo"),
+			fs.WithFile("dst.tar", "", fs.MatchAnyFileContent),
+			fs.WithFile("foo.txt", "foo\n"),
 			fs.WithDir("bar",
-				fs.WithFile("bar.txt", "bar")),
-		),
-	)
-
+				fs.WithFile("bar.txt", "bar\n"))))
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
+func TestTarTreeWithEmptyGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("source",
+			fs.WithFile("foo.txt", "foo\n"),
+			fs.WithDir("bar",
+				fs.WithFile("bar.txt", "bar\n"))))
+	defer rootDirectory.Remove()
+
+	dst := filepath.Join(rootDirectory.Path(), "destination", "dst.tar")
+	err := tarFiles(dst, filepath.Join(rootDirectory.Path(), "source", "non-existing*"))
+	assert.Error(t, err, "No source files")
 }
 
 func TestGzipTarTree(t *testing.T) {
