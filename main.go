@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -71,23 +70,11 @@ func printUsage() {
 }
 
 func remove(sources []string) error {
-	sources, err := glob(sources)
+	sources, err := glob(sources, false)
 	if err != nil {
 		return err
 	}
-	if len(sources) == 0 {
-		fmt.Println("No source files, doing nothing")
-		return nil
-	}
 	for _, source := range sources {
-		_, err := os.Stat(source)
-		if os.IsNotExist(err) {
-			fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
-			continue
-		}
-		if err != nil {
-			return err
-		}
 		fmt.Printf("Removing [%v]\n", source)
 		if err = os.RemoveAll(source); err != nil {
 			return err
@@ -96,7 +83,7 @@ func remove(sources []string) error {
 	return nil
 }
 
-func glob(sources []string) ([]string, error) {
+func glob(sources []string, fail bool) ([]string, error) {
 	var paths []string
 	for _, source := range sources {
 		matches, err := filepath.Glob(source)
@@ -105,20 +92,22 @@ func glob(sources []string) ([]string, error) {
 		}
 		if matches != nil {
 			paths = append(paths, matches...)
-		} else if !strings.ContainsAny(source, "*?") {
-			paths = append(paths, source)
+		} else if fail {
+			return nil, fmt.Errorf("Source [%v] does not exist", source)
+		} else {
+			fmt.Printf("Source [%v] does not exist, doing nothing\n", source)
 		}
+	}
+	if fail && len(paths) == 0 {
+		return nil, fmt.Errorf("No source files")
 	}
 	return paths, nil
 }
 
 func copy(sources []string, destination string) error {
-	sources, err := glob(sources)
+	sources, err := glob(sources, true)
 	if err != nil {
 		return err
-	}
-	if len(sources) == 0 {
-		return fmt.Errorf("No source files")
 	}
 	toFile := true
 	info, err := os.Stat(destination)
@@ -135,9 +124,6 @@ func copy(sources []string, destination string) error {
 	}
 	for _, source := range sources {
 		info, err = os.Stat(source)
-		if os.IsNotExist(err) {
-			return fmt.Errorf("Source [%v] does not exist", source)
-		}
 		if err != nil {
 			return err
 		}
@@ -222,12 +208,9 @@ func copyDirectory(src string, dst string, mode os.FileMode) error {
 }
 
 func tarFiles(dst string, srcs ...string) error {
-	srcs, err := glob(srcs)
+	srcs, err := glob(srcs, true)
 	if err != nil {
 		return err
-	}
-	if len(srcs) == 0 {
-		return fmt.Errorf("No source files")
 	}
 	var w io.Writer
 	if dst == "-" {
