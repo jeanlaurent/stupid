@@ -51,6 +51,19 @@ func TestRemoveWithGlob(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
+func TestRemoveWithNonExistingGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("remaining-file", ""))
+	defer rootDirectory.Remove()
+
+	err := remove([]string{
+		filepath.Join(rootDirectory.Path(), "non-existing*"),
+	})
+	assert.NilError(t, err)
+	expected := fs.Expected(t, fs.WithFile("remaining-file", ""))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
 func TestCopyFileToNonExistingFile(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithFile("foo.txt", "foo"))
@@ -128,12 +141,42 @@ func TestCopyMultipleFilesToFile(t *testing.T) {
 	assert.Error(t, err, "Only one source file allowed when destination is a file")
 }
 
+func TestCopyMultipleFilesWithNonExistingFile(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "bar"))
+	defer rootDirectory.Remove()
+
+	src := filepath.Join(rootDirectory.Path(), "source", "non-existing")
+	err := copy(
+		[]string{
+			src,
+			filepath.Join(rootDirectory.Path(), "foo.txt"),
+		}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.Error(t, err, "Source ["+src+"] does not exist")
+}
+
+func TestCopyMultipleFilesWithNonExistingGlob(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithFile("foo.txt", "foo"),
+		fs.WithFile("bar.txt", "bar"))
+	defer rootDirectory.Remove()
+
+	src := filepath.Join(rootDirectory.Path(), "source", "non-existing*")
+	err := copy(
+		[]string{
+			src,
+			filepath.Join(rootDirectory.Path(), "foo.txt"),
+		}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.Error(t, err, "Source ["+src+"] does not exist")
+}
+
 func TestCopyNonExistingFile(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root")
 	defer rootDirectory.Remove()
 
 	err := copy(
-		[]string{filepath.Join(rootDirectory.Path(), "foo.txt")}, filepath.Join(rootDirectory.Path(), "bar.txt"))
+		[]string{filepath.Join(rootDirectory.Path(), "non-existing")}, filepath.Join(rootDirectory.Path(), "bar.txt"))
 	assert.ErrorContains(t, err, "does not exist")
 }
 
@@ -217,8 +260,9 @@ func TestCopyTreeWithEmptyGlob(t *testing.T) {
 			fs.WithFile("foo.txt", "foo")))
 	defer rootDirectory.Remove()
 
-	err := copy([]string{filepath.Join(rootDirectory.Path(), "source", "non-existing*")}, filepath.Join(rootDirectory.Path(), "destination"))
-	assert.Error(t, err, "No source files")
+	src := filepath.Join(rootDirectory.Path(), "source", "non-existing*")
+	err := copy([]string{src}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.Error(t, err, "Source ["+src+"] does not exist")
 
 	expected := fs.Expected(t,
 		fs.WithDir("source",
@@ -288,9 +332,10 @@ func TestTarTreeWithEmptyGlob(t *testing.T) {
 				fs.WithFile("bar.txt", "bar\n"))))
 	defer rootDirectory.Remove()
 
+	src := filepath.Join(rootDirectory.Path(), "source", "non-existing*")
 	dst := filepath.Join(rootDirectory.Path(), "destination", "dst.tar")
-	err := tarFiles(dst, filepath.Join(rootDirectory.Path(), "source", "non-existing*"))
-	assert.Error(t, err, "No source files")
+	err := tarFiles(dst, src)
+	assert.Error(t, err, "Source ["+src+"] does not exist")
 }
 
 func TestGzipTarTree(t *testing.T) {
