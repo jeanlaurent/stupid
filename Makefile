@@ -2,7 +2,7 @@ depends:
 	dep ensure
 
 test:
-	go test -v ./...
+	go test -coverprofile=coverage.txt -covermode=atomic -v ./...
 
 bin/%: cmd/%
 	go build -o $@ ./$<
