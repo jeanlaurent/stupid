@@ -175,6 +175,41 @@ func TestCopyTreeToNonExistingPath(t *testing.T) {
 	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
 }
 
+func testCopyDeepTreeToExistingPath(t *testing.T) {
+	rootDirectory := fs.NewDir(t, "root",
+		fs.WithDir("source",
+			fs.WithFile("bar.txt", "bar"),
+			fs.WithDir("subdir1",
+				fs.WithFile("foo.txt", "foo"),
+				fs.WithDir("subdir2",
+					fs.WithFile("qix.txt", "qix"),
+				),
+			)),
+		fs.WithDir("destination"))
+
+	err := copy([]string{filepath.Join(rootDirectory.Path(), "source")}, filepath.Join(rootDirectory.Path(), "destination"))
+	assert.NilError(t, err)
+
+	expected := fs.Expected(t,
+		fs.WithDir("source",
+			fs.WithFile("bar.txt", "bar"),
+			fs.WithDir("subdir1",
+				fs.WithFile("foo.txt", "foo"),
+				fs.WithDir("subdir2",
+					fs.WithFile("qix.txt", "qix"),
+				),
+			)),
+		fs.WithDir("destination"),
+		fs.WithFile("bar.txt", "bar"),
+		fs.WithDir("subdir1",
+			fs.WithFile("foo.txt", "foo"),
+			fs.WithDir("subdir2",
+				fs.WithFile("qix.txt", "qix"),
+			),
+		))
+	assert.Assert(t, fs.Equal(rootDirectory.Path(), expected))
+}
+
 func TestCopyTreeWithGlob(t *testing.T) {
 	rootDirectory := fs.NewDir(t, "root",
 		fs.WithDir("source",
