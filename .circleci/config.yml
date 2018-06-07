@@ -10,4 +10,4 @@ jobs:
       - run: make build
       - run: bash <(curl -s https://codecov.io/bash)
       - store_artifacts:
-          path: /go/src/github.com/jeanlaurent/stupid/build
+          path: /go/src/github.com/jeanlaurent/stupid/bin
