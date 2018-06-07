@@ -1,6 +1,8 @@
+# Stupid
+
 [![CircleCI](https://circleci.com/gh/jeanlaurent/stupid/tree/master.svg?style=svg)](https://circleci.com/gh/jeanlaurent/stupid/tree/master)
 
-# Stupid
+[![codecov](https://codecov.io/gh/jeanlaurent/stupid/branch/master/graph/badge.svg)](https://codecov.io/gh/jeanlaurent/stupid)
 
 A stupid tool to write a portable `Makefile` for a `Go` project.
 
