@@ -12,6 +12,7 @@ Wildcard expansion for source files are performed for `*` and `?` meaning they c
 
 Available commands:
 * [cp](#cp)
+* [date](#date)
 * [home](#home)
 * [rm](#rm)
 * [tar](#tar)
@@ -52,6 +53,13 @@ Example:
 ```
 stupid cp web/readme.txt web/dist/* electron/web
 ```
+
+### date
+```
+stupid date
+```
+Prints the current date with RFC3339.
+
 ### home
 ```
 stupid home
