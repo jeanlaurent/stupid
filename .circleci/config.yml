@@ -9,4 +9,4 @@ jobs:
       - checkout
       - run: make build
       - store_artifacts:
-          path: /go/src/github.com/jeanlaurent/stupid/build
+          path: /go/src/github.com/jeanlaurent/stupid/bin
