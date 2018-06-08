@@ -35,12 +35,12 @@
     "internal/source",
     "x/subtest"
   ]
-  revision = "14eefd8766a1439cddfc295ecf6327cb422b4bb2"
-  version = "v2.0.0"
+  revision = "b6e20af1ed078cd01a6413b734051a292450b4cb"
+  version = "v2.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "efd001d1c9b81477ef843947a89e90b67756ea91ddd647ab90a7e293fc481ccd"
+  inputs-digest = "48cb7947701b29fb16f355d7502044ee24c8067d4c93a3876bd12e301dc59618"
   solver-name = "gps-cdcl"
   solver-version = 1
