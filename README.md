@@ -15,6 +15,7 @@ Available commands:
 * [cp](#cp)
 * [date](#date)
 * [home](#home)
+* [silence](#silence)
 * [rm](#rm)
 * [tar](#tar)
 * [untar](#untar)
@@ -72,6 +73,17 @@ The exact format is platform dependent (e.g. the result can contain back or forw
 Example:
 ```
 stupid cp build/library.yaml "$(shell stupid home)/.tootool/"
+```
+
+### silence
+```
+stupid silence
+```
+Discards everything received on the standard input.
+
+Example:
+```
+stupid rm build | stupid silence
 ```
 
 ### rm
