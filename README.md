@@ -22,7 +22,7 @@ Available commands:
 ## Installation
 
 ```
-go get -u github.com/jeanlaurent/stupid
+go get -u github.com/jeanlaurent/stupid/cmd/stupid
 ```
 
 Most systems have `GNU Make` available through their package manager.
