@@ -21,6 +21,11 @@ func main() {
 	case "help":
 	case "--help":
 		printUsage()
+	case "cp":
+		checkArguments(args, 3)
+		err = copy(args[1:len(args)-1], args[len(args)-1])
+	case "date":
+		fmt.Print(time.Now().Format(time.RFC3339))
 	case "home":
 		home, err := homedir.Dir()
 		if err == nil {
@@ -29,11 +34,8 @@ func main() {
 	case "rm":
 		checkArguments(args, 2)
 		err = remove(args[1:])
-	case "cp":
-		checkArguments(args, 3)
-		err = copy(args[1:len(args)-1], args[len(args)-1])
-	case "date":
-		fmt.Print(time.Now().Format(time.RFC3339))
+	case "silence":
+		err = silence()
 	case "tar":
 		checkArguments(args, 3)
 		err = tarFiles(args[len(args)-1], args[1:len(args)-1]...)
@@ -65,6 +67,7 @@ func printUsage() {
 	fmt.Println("* stupid date")
 	fmt.Println("* stupid home")
 	fmt.Println("* stupid rm SRCS")
+	fmt.Println("* stupid silence")
 	fmt.Println("* stupid tar SRCS DST")
 	fmt.Println("* stupid untar SRC DST")
 }
