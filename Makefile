@@ -1,3 +1,5 @@
+build: test cross
+
 depends:
 	dep ensure
 
@@ -17,5 +19,3 @@ bin/stupid-windows.exe: cmd/stupid
 	GOOS=windows go build -o $@ ./$<
 
 cross: bin/stupid-linux bin/stupid-darwin bin/stupid-windows.exe
-
-build: test cross
