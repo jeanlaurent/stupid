@@ -16,8 +16,8 @@ Available commands:
 * [date](#date)
 * [home](#home)
 * [mkdir](#mkdir)
-* [silence](#silence)
 * [rm](#rm)
+* [silence](#silence)
 * [tar](#tar)
 * [untar](#untar)
 
@@ -89,17 +89,6 @@ Example:
 stupid mkdir bin out/tmp
 ```
 
-### silence
-```
-stupid silence
-```
-Discards everything received on the standard input.
-
-Example:
-```
-stupid rm build | stupid silence
-```
-
 ### rm
 ```
 stupid rm SRCS
@@ -112,6 +101,17 @@ Removes the files and directories listed in `SRCS`, with the following behavior:
 Example:
 ```
 stupid rm build/*.tar.gz electron/web
+```
+
+### silence
+```
+stupid silence
+```
+Discards everything received on the standard input.
+
+Example:
+```
+stupid rm build | stupid silence
 ```
 
 ### tar
