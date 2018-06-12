@@ -15,6 +15,7 @@ Available commands:
 * [cp](#cp)
 * [date](#date)
 * [home](#home)
+* [mkdir](#mkdir)
 * [silence](#silence)
 * [rm](#rm)
 * [tar](#tar)
@@ -73,6 +74,19 @@ The exact format is platform dependent (e.g. the result can contain back or forw
 Example:
 ```
 stupid cp build/library.yaml "$(shell stupid home)/.tootool/"
+```
+
+### mkdir
+```
+stupid mkdir SRCS
+```
+Creates the directories listed in `SRCS`, with the following behavior:
+* already existing directories are skipped
+* intermediate directories for each source in `SRCS` are created
+
+Example:
+```
+stupid mkdir bin out/tmp
 ```
 
 ### silence
