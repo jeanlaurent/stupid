@@ -31,6 +31,9 @@ func main() {
 		if err == nil {
 			fmt.Print(home)
 		}
+	case "mkdir":
+		checkArguments(args, 2)
+		err = mkDir(args[1:])
 	case "rm":
 		checkArguments(args, 2)
 		err = remove(args[1:])
