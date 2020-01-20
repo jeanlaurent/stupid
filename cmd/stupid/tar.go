@@ -18,6 +18,10 @@ func tarFiles(dst string, srcs ...string) error {
 	if dst == "-" {
 		w = os.Stdout
 	} else {
+		dst, err = expand(dst)
+		if err != nil {
+			return err
+		}
 		fmt.Printf("Taring [%v]\n", dst)
 		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 			return err
