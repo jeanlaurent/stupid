@@ -14,6 +14,10 @@ func copy(sources []string, destination string) error {
 		return err
 	}
 	toFile := true
+	destination, err = expand(destination)
+	if err != nil {
+		return err
+	}
 	info, err := os.Stat(destination)
 	if os.IsNotExist(err) {
 		if destination[len(destination)-1] == '/' || len(sources) > 1 {

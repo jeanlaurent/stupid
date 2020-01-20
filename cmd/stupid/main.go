@@ -78,6 +78,11 @@ func printUsage() {
 func glob(sources []string, fail bool) ([]string, error) {
 	var paths []string
 	for _, source := range sources {
+		var err error
+		source, err = expand(source)
+		if err != nil {
+			return nil, err
+		}
 		matches, err := filepath.Glob(source)
 		if err != nil {
 			return nil, err
